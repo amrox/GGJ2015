@@ -4,21 +4,25 @@ import socket
 import sys
 from threading import Thread, Event
 
+RECV_MAX = 16384
+
 
 class ReceiveThread(Thread):
-    def __init__(self, event, sock):
+    def __init__(self, client):
         Thread.__init__(self)
-        self.stopped = event
-        self.sock = sock
+        self.client = client
 
     def run(self):
-        while not self.stopped.wait(0.5):
+        while not self.client.stopFlag.wait(0.5):
             try:
-                data = self.sock.recv(16384)  # limit reply to 16K
-                #print reply
-                if data.strip() == "LOST":
-                    print "YOU LOSE"
-                    break
+                data = self.client.socket.recv(RECV_MAX)
+                lines = data.split('\n')
+                for l in lines:
+                    self.client._handle(l)
+
+                #if data.strip() == "LOST":
+                #    self.game.lost()
+                #    break
 
             except socket.error as ex:
                 if str(ex) == "[Errno 35] Resource temporarily unavailable":
@@ -28,24 +32,41 @@ class ReceiveThread(Thread):
 
 class Client(object):
 
-    def __init__(self, host, port):
+    def __init__(self, host, port, game):
         self.host = host
         self.port = port
+        self.game = game
 
         self.receiveThread = None
         self.stopFlag = Event()
 
     def connect(self):
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.connect((self.host, self.port))
-        sock.setblocking(0)  # optional non-blocking
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket.connect((self.host, self.port))
+        self.socket.setblocking(0)  # optional non-blocking
     
-        self.receiveThread = ReceiveThread(self.stopFlag, sock)
+        self.receiveThread = ReceiveThread(self)
         self.receiveThread.start()
+
+    def _handle(self, msg):
+        if msg == "LOST":
+            self.game.lost()
+            self.stop()
+
 
     def stop(self):
         self.stopFlag.set()
-    
+
+
+class Game(object):
+
+    def __init__(self):
+        self.over = False
+
+    def lost(self):
+        print "GAME OVER\n\nPress enter to continue."
+        self.over = True
+
 
 def usage():
     return "hacker.py [host] [port]"
@@ -60,15 +81,17 @@ def main():
     host = sys.argv[1]
     port = int(sys.argv[2])
 
-    c = Client(host, port)
-    c.connect()
+    game = Game()
 
-    while c.receiveThread.isAlive():
+    client = Client(host, port, game)
+    client.connect()
+
+    while not game.over:
         try:
             cmd = raw_input('> ')
             print "%s" % (cmd)
         except KeyboardInterrupt:
-            c.stop()
+            client.stop()
             sys.exit(0)
 
 
