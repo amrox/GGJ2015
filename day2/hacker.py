@@ -33,7 +33,6 @@ class GameThread(Thread):
                     raise
 
 
-
 class Game(object):
 
     def __init__(self, host=None, port=None, duration=120):
