@@ -10,7 +10,7 @@ import random
 import socket
 
 RECV_MAX = 16384
-PORT = 2001
+PORT = 2000
 BANNER =''' 
     ____  ______   ____  ___________________   ______  __________ 
    / __ \/ ____/  / __ \/ ____/ ____/ ____/ | / / __ \/ ____/ __ \\
@@ -29,6 +29,14 @@ HACKER_MSGS=[
         'WHAT_DO_YOU_DO_NOW',
         'GIVE_UP_YOU_LOSE',
         'HAHAHAHAHAHAHAHAHAHA'
+        ]
+
+URLS = [
+        'http://www.russianbrides.com/',
+        'http://thepiratebay.se',
+        'http://www.worldjournal.com',
+        'https://www.youtube.com/watch?v=sz_m6N1IYuc',
+        'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
         ]
 
 VIRUS_LOCS = [
@@ -51,9 +59,9 @@ VIRUS_FILES = [
         'HALFLIFE3.zip'
         ]
 
-SAY_ENABLED = False
+SAY_ENABLED = True
 SINGLE_PLAYER = False
-TRACE_TIME = 120
+TRACE_TIME = 90
 
 global GAME
 
@@ -71,6 +79,11 @@ def openRandomTempDir():
     call(["touch", os.path.join(d, msg)])
     time.sleep(0.3)
     call(["open", "-a", "Finder", d])
+
+
+def openRandomURL():
+    url = URLS[random.choice(range(len(URLS)))]
+    call(["open", url])
 
 
 def clean():
@@ -116,9 +129,15 @@ class Game(object):
 
         self.over = False
 
-        self.vCount = 0
+        self.vCount = 1
 
         self.TCPHandler = None
+
+
+    def sendToHacker(self, msg):
+        if self.TCPHandler is not None:
+            self.TCPHandler.request.send(msg)
+
 
     def intro(self):
     
@@ -192,13 +211,15 @@ class Game(object):
         startTime = time.time()
 
         # NOTIFY BEGIN
-        if not SINGLE_PLAYER:
-            self.TCPHandler.request.send("BEGIN\t%d" % (duration))
+        self.sendToHacker("BEGIN\t%d" % (duration))
     
         while not GAME.over:
 
             if SINGLE_PLAYER:
-                self.vCount = 1
+                self.vCount = self.vCount + 1
+            else:
+                if self.vCount == 0:
+                    self.vCount = 1
            
             self.virusAttack()
 
@@ -214,10 +235,12 @@ class Game(object):
                 print ""
                 print "NO ACTIVE VIRUSES"
     
-            if len(self.activeViruses) == max_viruses:
+            if len(self.activeViruses) >= max_viruses:
                 print ""
                 print "TOO MANY VIRUS. COMPUTER OVER. YOU LOSE."
                 say("TOO MANY VIRUS. COMPUTER OVER. YOU LOSE.")
+
+                self.sendToHacker("END\tHACKER")
                 self.stop()
                 break
 
@@ -230,10 +253,17 @@ class Game(object):
                 print "SUCCESS!"
                 say("TRACE COMPLETE. HACKER IP FOUND. CYBER POLICE NOTIFIED.")
                 say("SUCCESS!")
+
+                self.sendToHacker("END\tDEFENDER")
                 self.stop()
+                break
+
             else:
-                left = duration - (now - startTime)
-                say("%d seconds left" % (left))
+                left = duration - (now - startTime) - 1 # (fudge for say)
+                if left < 1:
+                    say("trace nearly complete!")
+                else:
+                    say("%d seconds left" % (left))
 
 
     def start(self):
@@ -256,8 +286,12 @@ class Game(object):
         while self.vCount > 0:
 
             self.installVirus()
-            for i in range(random.choice(range(1, 3))):
-                openRandomTempDir()
+            for i in range(random.choice(range(1,4))):
+                which = random.choice(range(2))
+                if which == 0:
+                    openRandomTempDir()
+                else:
+                    openRandomURL()
 
             self.vCount = self.vCount - 1
 
@@ -309,9 +343,7 @@ class SingleTCPHandler(SocketServer.BaseRequestHandler):
             hacker_move = self.request.recv(RECV_MAX)
 
             if hacker_move == "virus":
-                GAME.vCount = GAME.vCount + 2
-                #GAME.virusAttack()
-        
+                GAME.vCount = GAME.vCount + random.choice((1,2))
 
 
 class SimpleServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
