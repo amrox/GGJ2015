@@ -25,13 +25,18 @@ BANNER ='''
 VOICE = 'Daniel'
 
 HACKER_MSGS=[
-        'YOU_CANT_HIDE',
+        'YOU_CANT_STOP_ME',
         'I_WILL_PWN_YOU',
-        'WHAT_DO_YOU_DO_NOW']
+        'WHAT_DO_YOU_DO_NOW',
+        'GIVE_UP_YOU_LOSE',
+        'HAHAHAHAHAHAHAHAHAHA'
+        ]
 
 VIRUS_LOCS = [
         ('Downloads', '~/Downloads'),
         ('Documents', '~/Documents'),
+        ('Pictures', '~/Pictures'),
+        ('Movies', '~/Movies'),
         ('Desktop', '~/Desktop')]
 
 
@@ -40,14 +45,15 @@ VIRUS_FILES = [
         'secret.tmp',
         'word97.exe',
         '69831D88-5CEB-45D7-8A4B-A0708C0FEF1A.mov',
-        'HOT_LADIES.xls'
+        'HOT_LADIES.xls',
+        'not-a-nigerian-scam.txt',
+        'HALFLIFE3.zip'
         ]
 
 SAY_ENABLED = True
 SINGLE_PLAYER = False
 
 global GAME
-
 
 
 def say(msg, dur=None):
@@ -76,7 +82,7 @@ def clean():
 
 def getIP():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.connect(("gmail.com",80))
+    s.connect(("gmail.com", 80))
     ip = s.getsockname()[0]
     s.close()
     return ip
@@ -93,14 +99,13 @@ class GameThread(Thread):
             self.game.run()
 
 
-
 class Game(object):
 
     def __init__(self):
 
         self.name = None
         self.hometown = None
-        self.favoriteColor = None
+        self.securityPin = None
 
         self.activeViruses = []
 
@@ -112,6 +117,8 @@ class Game(object):
     def intro(self):
     
         print BANNER 
+
+        defaultPin = random.choice(range(1000,9999))
         
         raw_input("Press Enter to begin.\n\n")
     
@@ -121,7 +128,7 @@ class Game(object):
         print ""
         self.name = raw_input("Name: [Dork] ") or "Dork\n"
         self.hometown = raw_input("Hometown: [Philly] ") or "Philly\n"
-        self.favoriteColor = raw_input("Favorite Color: [Red] ") or "Red\n"
+        self.securityPin = raw_input("Security PIN: [%d] " % (defaultPin)) or str(defaultPin) 
         print ""
     
         print "Now running\n  IP:   %s\n  PORT: %d" % (getIP(), PORT)
@@ -196,12 +203,16 @@ class Game(object):
                 print "TOO MANY VIRUS. COMPUTER OVER. YOU LOSE."
                 say("TOO MANY VIRUS. COMPUTER OVER. YOU LOSE.")
                 self.stop()
-    
+                break
+
             time.sleep(random.choice(range(2,5)))
     
             now = time.time()
             if startTime + duration < now:
-                say("TRACE COMPLETE. HACKER IP FOUND. POLICE NOTIFIED.")
+                print ""
+                print "TRACE COMPLETE. HACKER IP FOUND. CYBER POLICE NOTIFIED."
+                print "SUCCESS!"
+                say("TRACE COMPLETE. HACKER IP FOUND. CYBER POLICE NOTIFIED.")
                 say("SUCCESS!")
                 self.stop()
             else:
@@ -214,6 +225,10 @@ class Game(object):
         self.thread = GameThread(self)
         self.thread.start()
 
+        if SINGLE_PLAYER:
+            time.sleep(2)
+            self.intruderFlag.set()
+
     def stop(self):
         self.stopFlag.set()
         self.over = True
@@ -224,7 +239,6 @@ class Game(object):
         self.installVirus()
         for i in range(random.choice(range(1, 3))):
             openRandomTempDir()
-
 
 
     def installVirus(self):
@@ -266,7 +280,7 @@ class SingleTCPHandler(SocketServer.BaseRequestHandler):
 
         self.request.send("NAME\t%s" % (GAME.name))
         self.request.send("HOMETOWN\t%s" % (GAME.hometown))
-        self.request.send("COLOR\t%s" % (GAME.favoriteColor))
+        self.request.send("PIN\t%s" % (GAME.securityPin))
 
         while not GAME.over:
             hacker_move = self.request.recv(RECV_MAX)
@@ -288,18 +302,27 @@ class SimpleServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
 
 if __name__ == "__main__":
 
+    random.seed()
+
+    if len(sys.argv) > 1:
+        if sys.argv[1] == "single":
+            global SINGLE_PLAYER
+            SINGLE_PLAYER = True
+
     clean()
 
     global GAME
     GAME = Game()
     GAME.start()
 
-    # terminate with Ctrl-C
-    server = SimpleServer((getIP(), PORT), SingleTCPHandler)
-    try:
-        server.serve_forever()
-    except KeyboardInterrupt:
-        GAME.stop()
-        sys.exit(0)
+    if not SINGLE_PLAYER:
+
+        # terminate with Ctrl-C
+        server = SimpleServer((getIP(), PORT), SingleTCPHandler)
+        try:
+            server.serve_forever()
+        except KeyboardInterrupt:
+            GAME.stop()
+            sys.exit(0)
 
 
