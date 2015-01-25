@@ -166,6 +166,10 @@ class DefenderGame(object):
         self.securityPin = raw_input("Security PIN: [%d] " % (defaultPin)) or str(defaultPin) 
         print ""
 
+        self.sendToHacker("NAME\t%s" % (DEFENDER_GAME.name))
+        self.sendToHacker("HOMETOWN\t%s" % (DEFENDER_GAME.hometown))
+        self.sendToHacker("PIN\t%s" % (DEFENDER_GAME.securityPin))
+
         print "Now running\n  IP:   %s\n  PORT: %d" % (getIP(), PORT)
         say("Thank you for registering. PC Defender is now running.")
         print ""
@@ -343,19 +347,19 @@ class SingleTCPHandler(SocketServer.BaseRequestHandler):
 
         DEFENDER_GAME.TCPHandler = self
 
-        self.request.send("NAME\t%s" % (DEFENDER_GAME.name))
-        self.request.send("HOMETOWN\t%s" % (DEFENDER_GAME.hometown))
-        self.request.send("PIN\t%s" % (DEFENDER_GAME.securityPin))
-
         while not DEFENDER_GAME.over:
+
             hacker_move = self.request.recv(RECV_MAX)
 
             if hacker_move == "virus":
                 DEFENDER_GAME.vCount = DEFENDER_GAME.vCount + random.choice((1,2))
 
             elif hacker_move.startswith("cracked"):
-                target = hacker_movie.split('\t')[1]
+                target = hacker_move.split('\t')[1]
                 msg = "%s compromised!" % (target)
+                print ""
+                print "**** %s" % (msg)
+                print ""
                 say(msg, voice="Zarvox")
                     
 
