@@ -43,15 +43,19 @@ VIRUS_FILES = [
         'HOT_LADIES.xls'
         ]
 
-SAY_ENABLED = False
+SAY_ENABLED = True
+SINGLE_PLAYER = False
 
 global GAME
 
 
 
-def say(msg):
+def say(msg, dur=None):
     if SAY_ENABLED:
-        call(["say", "-v", VOICE, msg])
+        if dur is None:
+            call(["say", "-v", VOICE, msg])
+        else:
+            call(["say", "-v", VOICE, "-r", str(dur), msg])
 
 def openRandomTempDir():
     d = tempfile.mkdtemp()
@@ -161,7 +165,7 @@ class Game(object):
         time.sleep(0.5)
         print "PREPARE TO DEFEND"
         say("prepare to defend")
-        call(["say", "-v", VOICE, "-r", "2'", "now"])
+        say("now", dur=2)
     
         time.sleep(0.5)
     
@@ -171,11 +175,11 @@ class Game(object):
         startTime = time.time()
     
         while not GAME.over:
-    
-            self.installVirus()
-            for i in range(random.choice(range(1, 3))):
-                openRandomTempDir()
-    
+
+            if SINGLE_PLAYER:
+                self.virusAttack()
+   
+            lastVirusCount = len(self.activeViruses)
             self.checkViruses()
     
             if len(self.activeViruses) > 0:
@@ -183,6 +187,9 @@ class Game(object):
                 print "ACTIVE VIRUSES (%d/%d)" % (len(self.activeViruses), max_viruses)
                 for v in self.activeViruses:
                     print "   %s" % (v)
+            elif len(self.activeViruses) == 0 and lastVirusCount > 0:
+                print ""
+                print "NO ACTIVE VIRUSES"
     
             if len(self.activeViruses) == max_viruses:
                 print ""
@@ -210,6 +217,14 @@ class Game(object):
     def stop(self):
         self.stopFlag.set()
         self.over = True
+
+
+    def virusAttack(self):
+
+        self.installVirus()
+        for i in range(random.choice(range(1, 3))):
+            openRandomTempDir()
+
 
 
     def installVirus(self):
@@ -249,12 +264,15 @@ class SingleTCPHandler(SocketServer.BaseRequestHandler):
     def handle(self):
         GAME.intruderFlag.set()
 
-        self.request.send(GAME.name)
-        self.request.send(GAME.hometown)
-        self.request.send(GAME.favoriteColor)
+        self.request.send("NAME\t%s" % (GAME.name))
+        self.request.send("HOMETOWN\t%s" % (GAME.hometown))
+        self.request.send("COLOR\t%s" % (GAME.favoriteColor))
 
         while not GAME.over:
             hacker_move = self.request.recv(RECV_MAX)
+
+            if hacker_move == "virus":
+                GAME.virusAttack()
         
 
 
