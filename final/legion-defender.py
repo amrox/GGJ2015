@@ -38,7 +38,8 @@ URLS = [
         'http://thepiratebay.se',
         'http://www.worldjournal.com',
         'https://www.youtube.com/watch?v=sz_m6N1IYuc',
-        'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+        'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        'http://www.hamsterdance.org/hamsterdance/'
         ]
 
 VIRUS_LOCS = [
