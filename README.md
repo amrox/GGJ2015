@@ -1,20 +1,20 @@
 # GGJ2015 - Legion Defender
 
-                _______  ______ _____  _____  __   _
-         |      |______ |  ____   |   |     | | \  |
-         |_____ |______ |_____| __|__ |_____| |  \_|
+                               _______  ______ _____  _____  __   _
+                        |      |______ |  ____   |   |     | | \  |
+                        |_____ |______ |_____| __|__ |_____| |  \_|
 
-        ____  ___________________   ______  __________ 
-       / __ \/ ____/ ____/ ____/ | / / __ \/ ____/ __ \
-      / / / / __/ / /_  / __/ /  |/ / / / / __/ / /_/ /
-     / /_/ / /___/ __/ / /___/ /|  / /_/ / /___/ _, _/ 
-    /_____/_____/_/   /_____/_/ |_/_____/_____/_/ |_|  
+                       ____  ___________________   ______  __________ 
+                      / __ \/ ____/ ____/ ____/ | / / __ \/ ____/ __ \
+                     / / / / __/ / /_  / __/ /  |/ / / / / __/ / /_/ /
+                    / /_/ / /___/ __/ / /___/ /|  / /_/ / /___/ _, _/ 
+                   /_____/_____/_/   /_____/_/ |_/_____/_____/_/ |_|  
     
     
    
 ## Overview
 
-Legion Defender is a two player game where one player acts as a hacker, and another a victim who must defend against the hecker's attack.
+Legion Defender is a two player game where one player acts as a hacker, and another a victim who must defend against the hacker's attack.
 
 
 <img src="legion-defender.png" width=100%>
