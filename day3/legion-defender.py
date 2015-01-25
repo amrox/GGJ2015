@@ -61,11 +61,11 @@ VIRUS_FILES = [
         'HALFLIFE3.zip'
         ]
 
+global DEFENDER_GAME
+
 SAY_ENABLED = True
-SINGLE_PLAYER = False
 TRACE_TIME = 90
 
-global DEFENDER_GAME
 
 random.seed()
 
@@ -121,7 +121,7 @@ class DefenderGameThread(Thread):
 
 class DefenderGame(object):
 
-    def __init__(self):
+    def __init__(self, singlePlayer=False):
 
         self.name = None
         self.hometown = None
@@ -137,6 +137,8 @@ class DefenderGame(object):
         self.vCount = 1
 
         self.TCPHandler = None
+
+        self.singlePlayer = singlePlayer
 
 
     def sendToHacker(self, msg):
@@ -220,7 +222,7 @@ class DefenderGame(object):
 
         while not DEFENDER_GAME.over:
 
-            if SINGLE_PLAYER:
+            if self.singlePlayer:
                 self.vCount = self.vCount + 1
             else:
                 if self.vCount == 0:
@@ -277,7 +279,7 @@ class DefenderGame(object):
         self.thread.daemon = True
         self.thread.start()
 
-        if SINGLE_PLAYER:
+        if self.singlePlayer:
             time.sleep(2)
             self.intruderFlag.set()
 
@@ -363,11 +365,12 @@ class SimpleServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
 
 def defender_main():
 
+    single = False
     if len(sys.argv) > 1:
         if sys.argv[1] == "single":
-            SINGLE_PLAYER = True
+            single = True
 
-    if SINGLE_PLAYER:
+    if single:
         print "# Single Player Mode"
     else:
         print "# Multiplayer Mode"
@@ -375,10 +378,10 @@ def defender_main():
     clean()
 
     global DEFENDER_GAME
-    DEFENDER_GAME = DefenderGame()
+    DEFENDER_GAME = DefenderGame(singlePlayer=single)
     DEFENDER_GAME.start()
 
-    if SINGLE_PLAYER:
+    if single:
 
         while True:
             time.sleep(0.25)
