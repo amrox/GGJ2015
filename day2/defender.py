@@ -37,6 +37,8 @@ VIRUS_LOCS = [
         ('Documents', '~/Documents'),
         ('Pictures', '~/Pictures'),
         ('Movies', '~/Movies'),
+        ('Music', '~/Music'),
+        ('Home', '~'),
         ('Desktop', '~/Desktop')]
 
 
