@@ -513,7 +513,7 @@ class HackerGame(object):
         self.thread = HackerGameThread(self)
         self.thread.daemon = True
         self.thread.start()
-        self.startTime = time.time()
+        
 
     def stop(self):
         self.stopFlag.set()
@@ -694,8 +694,11 @@ def hacker_main():
 
     while game.setup == False:
         pass
-             
+            
+
     print "WE ARE IN.\n"
+
+    game.startTime = time.time()
 
     while not game.over:
         try:
