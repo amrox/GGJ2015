@@ -68,7 +68,7 @@ class GameThread(Thread):
                         self.game._handle(l)
 
                 except socket.error as ex:
-                    if str(ex) == "[Errno 35] Resource temporarily unavailable":
+                    if str(ex) == "[Errno 35] Resource temporarily unavailable" or str(ex) == "[Errno 10035] A non-blocking socket operation could not be completed immediately":
                         continue
                     raise
 
