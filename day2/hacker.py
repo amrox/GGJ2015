@@ -226,7 +226,12 @@ class Game(object):
             if result == "FAILURE.":
                 return "FAILURE."
         return "SUCCESS."
-        
+    def playsound(self, freq):
+        try:
+            import winsound
+            winsound.Beep(freq,300)
+        except ImportError:
+            pass
 def usage():
     return "hacker.py [host] [port]"
 
@@ -242,11 +247,14 @@ class Virus(object):
         self.result = self.game.genCmd(diff)
     def handleResult(self):
         print self.result
+
         if self.result == "SUCCESS.":
             self.game.send("virus")
             self.game.successes +=1
+            self.game.playsound(random.randint(500, 1000))
         else:
-            self.failures -=1
+            self.game.failures -=1
+            self.game.playsound(random.randint(5000,10000))
 
         if len(self.game.data) > 0:
             if successes == 3:
