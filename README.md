@@ -21,7 +21,7 @@ Legion Defender is a two player game where one player acts as a hacker, and anot
 
 #### Use of Theme
 
-The hacker is trying to steal information and install viruses on the defender, and must choose what to attack. Therefore he is choosing where to "go" in the defender's computer. The prompt of the hacker's interface is *"Where do we go from here?"*.
+The hacker is trying to steal information and install viruses on the defender, and must choose what to attack. Therefore he is choosing where to "go" in the defender's computer. The prompt of the hacker's interface is also **`WHERE DO WE GO FROM HERE?`**
 
 
 #### Modifiers - *Batch Job*
