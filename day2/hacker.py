@@ -114,13 +114,11 @@ class Game(object):
         self.socket.setblocking(0)  # optional non-blocking
     
     def _handle(self, msg):
-        fields = msg.split('\t')
-        
         try:
+            fields = msg.split('\t')
             prop = fields[0]
             val = fields[1]
             self.data[prop] = val
-            print self.data
         except IndexError:
             Dumb = None
             print ""
