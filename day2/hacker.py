@@ -3,6 +3,8 @@
 import socket
 import sys
 import time
+import random
+import string
 from threading import Thread, Event, Timer
 
 RECV_MAX = 16384
@@ -44,6 +46,8 @@ locker  <amount> | 12 sec     | Encrypt target data and ransom.
 ================================================================
     """
 
+random.seed()
+
 class GameThread(Thread):
 
     def __init__(self, game):
@@ -82,7 +86,6 @@ class Game(object):
         self.socket = None
         self.startTime = None
 
-        self.tools = []
         self.data = {}
         self.data["funds"] = 0.0
         self.data["targetFunds"] = 1000.0 # randomize?
@@ -103,7 +106,6 @@ class Game(object):
             r = 0
         return int(r)
 
-
     def lost(self):
         print "GAME OVER\n\nPress enter to continue."
         self.over = True
@@ -120,37 +122,28 @@ class Game(object):
             val = fields[1]
             self.data[prop] = val
         except IndexError:
-            Dumb = None
-            print ""
-            #do nothing
+            pass
     def send(self,msg):
         if self.socket is not None:
             self.socket.send(msg)
     def handleCommand(self, cmd):
-        if cmd == "help":
+        if cmd == "help" or cmd == "?":
             print help
         elif "bankjob" in cmd:
             try:
                 t = Bankjob(self,cmd.split()[1])
-                self.tools.append(t)
+                t.handleResult()
             except IndexError:
                 print "Must enter an amount."
         elif "dirt" in cmd:
-            t = Tool(self,"dirt",5, "Gathering information from social network.", "Hacked social network.", "Failed to hack social network.")
-            self.tools.append(t)
+            t = Tool(self,"dirt",3, "Gathering information from social network.", "Hacked social network.", "Failed to hack social network.")
+            t.handleResult()
         elif "locker" in cmd:
             try:
-                t = Tool(self,"locker", 15,"Attempting to ransom %s credits." % cmd.split()[1], "Target paid the ransom.", "Data lock failed.")
-                self.tools.append(t)
+                t = Tool(self,"locker", 3,"Attempting to ransom %s credits." % cmd.split()[1], "Target paid the ransom.", "Data lock failed.")
+                t.handleResult()
             except IndexError:
                 print "Must enter an amount."
-        elif cmd == "stat" or cmd == "":
-            print "\n"
-            for t in enumerate(self.tools):
-                if not t[1].done: 
-                    print "%s in progress." % t[1].name
-            print "\n" 
-
         else:
             print "I did not understand that command."
     def promt(self):
@@ -160,51 +153,92 @@ class Game(object):
         print logo
         print help
         print "WE ARE IN.\n"
+
+    def decrypt(self):
+        filename = ""
+        for i in range(0,5):
+            filename += random.choice(list(string.ascii_lowercase))
+        return "%s.enc" % filename
+
+    def  genkey(self):
+        key = ""
+        for i in range(0,4):
+            if i % 2 == 0:
+                key += str(random.randint(0,9))
+            else:
+                key += random.choice(list(string.ascii_uppercase))
+        return "%s" % key
+
+    def askdec(self):
+        filename = self.decrypt()
+        print "ENCRYPTED FILE FOUND... %s" % filename
+        input = raw_input('%ds > ' % (self.remainingTime()))
+        if input == "decrypt %s" % filename:
+            return "SUCCESS."
+        else:
+            return "FAILURE."
+
+    def askkey(self):
+        key = self.genkey()
+        print "KEY GENERATED... %s" % key
+        input = raw_input('%ds > ' % (self.remainingTime()))
+        if input == "usekey %s" % key:
+            return "SUCCESS."
+        else:
+            return "FAILURE."
+
+    def genCmd(self,times):
+        for i in range(0, times):
+            choices = ["key", "decrypt"]
+            result = "FAILURE."
+            c = random.choice(choices)
+            if c == "key":
+                result = self.askkey()
+            elif c == "decrypt":
+                result = self.askdec()
+
+            if result == "FAILURE.":
+                return "FAILURE."
+        return "SUCCESS."
+        
 def usage():
     return "hacker.py [host] [port]"
 
 
 class Tool(object):
     """docstrinTool"""
-    def __init__(self,game,name,duration,started, completion, failure):
+    def __init__(self,game,name,diff,started, completion, failure):
         self.game = game
         self.done = False
         self.name = name
-        self.duration = duration
         self.onsuccess = completion
         self.onfailure = failure
-        self.timer = Timer(self.duration, self.finished)
         print  "%s" % started 
-        print "It will take %s seconds." % duration
-        self.timer.start()
-    def finished(self):
-        self.done = True
-        print self.onsuccess
+        self.result = self.game.genCmd(diff)
+    def handleResult(self):
+        print self.result
+        
 
 class  Bankjob(Tool):
     """docstring for  Bankjob"""
-    bankBeingHacked = 0
     def __init__(self,game, amount):
-        super(Bankjob, self).__init__(game,"bankjob", 5,"Attempting to withdraw %s credits.\n" % amount , "Accessed bank records.", "Supicious activity detected. Account Locked.")
-        Bankjob.bankBeingHacked += 1 
+        super(Bankjob, self).__init__(game,"bankjob", 3,"Attempting to withdraw %s credits.\n" % amount , "Accessed bank records.", "Supicious activity detected. Account Locked.")
         self.amount = amount
-    def finished(self):
-        self.done = True
-        percentage = self.game.data["targetFunds"] - float(self.amount)
-        percentage = percentage / self.game.data["targetFunds"]
-        percentage = (1 - percentage) * 100
 
-        if Bankjob.bankBeingHacked >= 2:
-            print self.onfailure
+    def handleResult(self):
+        if result == "SUCCESS":
+            percentage = self.game.data["targetFunds"] - float(self.amount)
+            percentage = percentage / self.game.data["targetFunds"]
+            percentage = (1 - percentage) * 100
 
-        elif percentage > 30:
-            print self.onfailure
-        else: 
-            print self.onsuccess
-            self.game.data["targetFunds"] -= float(self.amount)
-            self.game.data["funds"] += float(self.amount)
-            self.game.send("virus")
-            print "%s credits added to funds." % self.amount
+            if percentage > 30:
+                print self.onfailure
+            else: 
+                print self.onsuccess
+                self.game.data["targetFunds"] -= float(self.amount)
+                self.game.data["funds"] += float(self.amount)
+                self.game.send("virus")
+                print "%s credits added to funds." % self.amount
 
 def main():
 
@@ -230,7 +264,6 @@ def main():
             game.promt()
             
             cmd = raw_input('%ds > ' % (game.remainingTime()))
-            #print "%s" % (cmd)
             if game.remainingTime() > 0:
                 print "\n"
                 game.handleCommand(cmd)
