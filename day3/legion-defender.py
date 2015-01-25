@@ -115,6 +115,7 @@ class DefenderGameThread(Thread):
         self.game = game 
 
     def run(self):
+        self.game.intro()
         while not self.game.stopFlag.wait(0.5):
             self.game.run()
 
@@ -212,12 +213,10 @@ class DefenderGame(object):
 
         time.sleep(0.5)
 
-        duration = TRACE_TIME
-
         startTime = time.time()
 
         # NOTIFY BEGIN
-        self.sendToHacker("BEGIN\t%d" % (duration))
+        self.sendToHacker("BEGIN\t%d" % (TRACE_TIME))
 
         while not DEFENDER_GAME.over:
 
@@ -253,7 +252,7 @@ class DefenderGame(object):
             time.sleep(random.choice(range(2,5)))
 
             now = time.time()
-            if startTime + duration < now:
+            if startTime + TRACE_TIME < now:
                 print ""
                 print "TRACE COMPLETE. HACKER IP FOUND. CYBER POLICE NOTIFIED."
                 print "SUCCESS!"
@@ -265,7 +264,7 @@ class DefenderGame(object):
                 break
 
             else:
-                left = duration - (now - startTime) - 1 # (fudge for say)
+                left = TRACE_TIME - (now - startTime) - 1 # (fudge for say)
                 if left < 1:
                     say("trace nearly complete!")
                 else:
@@ -273,7 +272,8 @@ class DefenderGame(object):
 
 
     def start(self):
-        self.intro()
+
+        #self.intro()
         self.thread = DefenderGameThread(self)
         self.thread.daemon = True
         self.thread.start()
@@ -381,7 +381,6 @@ def defender_main():
     DEFENDER_GAME.start()
 
     if single:
-
         while True:
             time.sleep(0.25)
 
@@ -504,6 +503,7 @@ class HackerGame(object):
         self.failures = 0
 
         self.data = {}
+    
     def start(self):
         if self.host is not None and self.port is not None:
             self._connect()
