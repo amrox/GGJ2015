@@ -65,7 +65,7 @@ global DEFENDER_GAME
 
 SAY_ENABLED = True
 TRACE_TIME = 90
-
+MAX_VIRUSES = 6
 
 random.seed()
 
@@ -212,7 +212,6 @@ class DefenderGame(object):
 
         time.sleep(0.5)
 
-        max_viruses = 5
         duration = TRACE_TIME
 
         startTime = time.time()
@@ -235,14 +234,14 @@ class DefenderGame(object):
 
             if len(self.activeViruses) > 0:
                 print ""
-                print "ACTIVE VIRUSES (%d/%d)" % (len(self.activeViruses), max_viruses)
+                print "ACTIVE VIRUSES (%d/%d)" % (len(self.activeViruses), MAX_VIRUSES)
                 for v in self.activeViruses:
                     print "   %s" % (v)
             elif len(self.activeViruses) == 0 and lastVirusCount > 0:
                 print ""
                 print "NO ACTIVE VIRUSES"
 
-            if len(self.activeViruses) >= max_viruses:
+            if len(self.activeViruses) >= MAX_VIRUSES:
                 print ""
                 print "TOO MANY VIRUS. COMPUTER OVER. YOU LOSE."
                 say("TOO MANY VIRUS. COMPUTER OVER. YOU LOSE.")
