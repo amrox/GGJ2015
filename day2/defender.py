@@ -51,7 +51,7 @@ VIRUS_FILES = [
         'HALFLIFE3.zip'
         ]
 
-SAY_ENABLED = True
+SAY_ENABLED = False
 SINGLE_PLAYER = False
 TRACE_TIME = 120
 
@@ -192,7 +192,8 @@ class Game(object):
         startTime = time.time()
 
         # NOTIFY BEGIN
-        self.TCPHandler.request.send("BEGIN\d%s" % (duration))
+        if not SINGLE_PLAYER:
+            self.TCPHandler.request.send("BEGIN\t%d" % (duration))
     
         while not GAME.over:
 
@@ -238,6 +239,7 @@ class Game(object):
     def start(self):
         self.intro()
         self.thread = GameThread(self)
+        self.thread.daemon = True
         self.thread.start()
 
         if SINGLE_PLAYER:
@@ -330,14 +332,23 @@ if __name__ == "__main__":
         if sys.argv[1] == "single":
             SINGLE_PLAYER = True
 
+    if SINGLE_PLAYER:
+        print "# Single Player Mode"
+    else:
+        print "# Multiplayer Mode"
+
     clean()
 
     global GAME
     GAME = Game()
     GAME.start()
 
-    if not SINGLE_PLAYER:
+    if SINGLE_PLAYER:
 
+        while True:
+            time.sleep(0.25)
+
+    else :
         # terminate with Ctrl-C
         server = SimpleServer((getIP(), PORT), SingleTCPHandler)
         try:
