@@ -94,6 +94,9 @@ class Game(object):
         self.setup = False 
         self.winner = None
 
+        self.successes = 0
+        self.failures = 0
+
         self.data = {}
     def start(self):
         if self.host is not None and self.port is not None:
@@ -150,8 +153,8 @@ class Game(object):
         if cmd == "help" or cmd == "?":
             print help
         elif "inf" in string.lower(cmd) or "infect" == cmd:
-            t = Tool(self,"inf",1,"Gathering information from social network.", "Hacked social network.", "Failed to hack social network.")
-            t.handleResult()
+            v = Virus(self,"inf",1,"Gathering information from social network.", "Hacked social network.", "Failed to hack social network.")
+            v.handleResult()
         else:
             print "I did not understand that command."
     def promt(self):
@@ -227,7 +230,7 @@ class Game(object):
 def usage():
     return "hacker.py [host] [port]"
 
-class Tool(object):
+class Virus(object):
     """docstrinTool"""
     def __init__(self,game,name,diff,started, completion, failure):
         self.game = game
@@ -241,7 +244,17 @@ class Tool(object):
         print self.result
         if self.result == "SUCCESS.":
             self.game.send("virus")
+            self.game.successes +=1
+        else:
+            self.failures -=1
 
+        if len(self.game.data) > 0:
+            if successes == 3:
+                print "RETRIEVED TARGET'S NAME: %s" % self.game.data["NAME"]
+            if successes == 5:
+                print "RETRIEVED TARGET'S HOMETOWN: %s" % self.game.data["HOMETOWN"]
+            if successes == 8:
+                print "RETRIEVED TARGET'S PIN: %s" % self.game.data["PIN"]
 
 def main():
 
