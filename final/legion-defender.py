@@ -230,7 +230,7 @@ class DefenderGame(object):
             if self.singlePlayer:
                 self.vCount = self.vCount + 1
             else:
-                if self.vCount == 0:
+                if len(self.activeViruses) == 0:
                     self.vCount = 1
 
             self.virusAttack()
