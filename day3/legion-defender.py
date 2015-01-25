@@ -665,10 +665,13 @@ class Virus(object):
         if len(self.game.data) > 0:
             if self.game.successes == 3:
                 print "RETRIEVED TARGET'S NAME: %s" % self.game.data["NAME"]
+                self.game.send("cracked\tname")
             if self.game.successes == 5:
                 print "RETRIEVED TARGET'S HOMETOWN: %s" % self.game.data["HOMETOWN"]
+                self.game.send("cracked\thome")
             if self.game.successes == 8:
                 print "RETRIEVED TARGET'S PIN: %s" % self.game.data["PIN"]
+                self.game.send("cracked\tnpin")
 
 def hacker_main():
 
