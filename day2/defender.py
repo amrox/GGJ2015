@@ -10,8 +10,7 @@ import random
 import socket
 
 RECV_MAX = 16384
-DURATION=120
-PORT = 2000
+PORT = 2001
 BANNER =''' 
     ____  ______   ____  ___________________   ______  __________ 
    / __ \/ ____/  / __ \/ ____/ ____/ ____/ | / / __ \/ ____/ __ \\
@@ -37,6 +36,8 @@ VIRUS_LOCS = [
         ('Documents', '~/Documents'),
         ('Pictures', '~/Pictures'),
         ('Movies', '~/Movies'),
+        ('Music', '~/Music'),
+        ('Home', '~'),
         ('Desktop', '~/Desktop')]
 
 
@@ -52,6 +53,7 @@ VIRUS_FILES = [
 
 SAY_ENABLED = True
 SINGLE_PLAYER = False
+TRACE_TIME = 120
 
 global GAME
 
@@ -116,6 +118,8 @@ class Game(object):
 
         self.vCount = 0
 
+        self.TCPHandler = None
+
     def intro(self):
     
         print BANNER 
@@ -138,7 +142,15 @@ class Game(object):
         print ""
         
         time.sleep(0.5)
-    
+        print " ****************************************************************"
+        print " *      Virus locations will be displayed in this console.      *"
+        print " *                                                              *"
+        print " * Delete the viruses as they appear but beware of decoy files! *"
+        print " ****************************************************************"
+        print ""
+        say("Virus locations will be displayed in this console.")
+        say("Delete the viruses as they appear but beware of decoy files!")
+        
 
     def run(self):
 
@@ -153,24 +165,20 @@ class Game(object):
     
         time.sleep(0.5)
     
-        #print "Starting Countermeasures..."
-        #say("starting countermeasures")
+        print "Starting Countermeasures..."
+        say("starting countermeasures")
     
-        #time.sleep(0.5)
+        time.sleep(0.5)
     
-        #print "Beginning Trace..."
-        #say("beginning trace")
+        print "Beginning Trace..."
+        say("beginning trace")
     
-        #time.sleep(0.5)
+        time.sleep(0.5)
     
-        #print "Trace will complete in 1 minute"
-        #print ""
-        #say("Trace will complete in 1 minutes.")
+        print "Trace will complete in %d seconds" % (TRACE_TIME)
+        print ""
+        say("Trace will complete in %d seconds."% (TRACE_TIME))
     
-        #time.sleep(1.0)
-        #say("Virus locations will be displayed in the console.")
-        #say("Beware of decoy files.")
-        #
         time.sleep(0.5)
         print "PREPARE TO DEFEND"
         say("prepare to defend")
@@ -179,9 +187,12 @@ class Game(object):
         time.sleep(0.5)
     
         max_viruses = 5
-        duration = 60
+        duration = TRACE_TIME
     
         startTime = time.time()
+
+        # NOTIFY BEGIN
+        self.TCPHandler.request.send("BEGIN\d%s" % (duration))
     
         while not GAME.over:
 
@@ -286,6 +297,8 @@ class SingleTCPHandler(SocketServer.BaseRequestHandler):
     def handle(self):
         GAME.intruderFlag.set()
 
+        GAME.TCPHandler = self
+
         self.request.send("NAME\t%s" % (GAME.name))
         self.request.send("HOMETOWN\t%s" % (GAME.hometown))
         self.request.send("PIN\t%s" % (GAME.securityPin))
@@ -315,7 +328,6 @@ if __name__ == "__main__":
 
     if len(sys.argv) > 1:
         if sys.argv[1] == "single":
-            global SINGLE_PLAYER
             SINGLE_PLAYER = True
 
     clean()
