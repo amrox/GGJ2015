@@ -71,12 +71,14 @@ random.seed()
 
 ################################################################################
 
-def say(msg, dur=None):
+def say(msg, voice=None, dur=None):
     if SAY_ENABLED:
+        if voice is None:
+            voice = VOICE
         if dur is None:
-            call(["say", "-v", VOICE, msg])
+            call(["say", "-v", voice, msg])
         else:
-            call(["say", "-v", VOICE, "-r", str(dur), msg])
+            call(["say", "-v", voice, "-r", str(dur), msg])
 
 def openRandomTempDir():
     d = tempfile.mkdtemp()
@@ -350,6 +352,12 @@ class SingleTCPHandler(SocketServer.BaseRequestHandler):
 
             if hacker_move == "virus":
                 DEFENDER_GAME.vCount = DEFENDER_GAME.vCount + random.choice((1,2))
+
+            elif hacker_move.startswith("cracked"):
+                target = hacker_movie.split('\t')[1]
+                msg = "%s compromised!" % (target)
+                say(msg, voice="Zarvox")
+                    
 
 
 class SimpleServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
@@ -670,10 +678,10 @@ class Virus(object):
                 self.game.send("cracked\tname")
             if self.game.successes == 5:
                 print "RETRIEVED TARGET'S HOMETOWN: %s" % self.game.data["HOMETOWN"]
-                self.game.send("cracked\thome")
+                self.game.send("cracked\thome address")
             if self.game.successes == 8:
                 print "RETRIEVED TARGET'S PIN: %s" % self.game.data["PIN"]
-                self.game.send("cracked\tnpin")
+                self.game.send("cracked\tsecurity pin")
 
 def hacker_main():
 
