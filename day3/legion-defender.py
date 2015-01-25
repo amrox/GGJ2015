@@ -664,11 +664,11 @@ class Virus(object):
             self.game.playsound(random.randint(5000,10000))
 
         if len(self.game.data) > 0:
-            if successes == 3:
+            if self.game.successes == 3:
                 print "RETRIEVED TARGET'S NAME: %s" % self.game.data["NAME"]
-            if successes == 5:
+            if self.game.successes == 5:
                 print "RETRIEVED TARGET'S HOMETOWN: %s" % self.game.data["HOMETOWN"]
-            if successes == 8:
+            if self.game.successes == 8:
                 print "RETRIEVED TARGET'S PIN: %s" % self.game.data["PIN"]
 
 def hacker_main():
