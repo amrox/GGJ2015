@@ -43,7 +43,7 @@ Commands          | Description
 infect            | Place virus on target's machine.
 usekey <key>      | Use a generated key.
 dc <file.enc>     | Decrypt a file.
-link <from> <to> | Route from one node to another.
+link <from> <to>  | Route from one node to another.
 help              | Display help.
 ================================================================
     """
@@ -60,6 +60,9 @@ class GameThread(Thread):
         self.game = game 
 
     def run(self):
+        while self.game.setup == False:
+            pass
+
         while not self.game.stopFlag.wait(0.5):
 
             if self.game.remainingTime() == 0:
@@ -91,12 +94,16 @@ class Game(object):
         self.socket = None
         self.startTime = None
 
+        self.setup = False 
+
         self.data = {}
         self.data["funds"] = 0.0
         self.data["targetFunds"] = 1000.0 # randomize?
     def start(self):
         if self.host is not None and self.port is not None:
             self._connect()
+        else:
+            self.setup = True
 
         self.thread = GameThread(self)
         self.thread.start()
@@ -126,6 +133,10 @@ class Game(object):
             prop = fields[0]
             val = fields[1]
             self.data[prop] = val
+
+            if self.data["begin"] is not None:
+                self.duration = self["begin"]
+                self.setup = True
         except IndexError:
             pass
     def send(self,msg):
@@ -155,13 +166,7 @@ class Game(object):
             print "I did not understand that command."
     def promt(self):
         print "WHAT DO WE DO FROM HERE?\n\n"
-    def initprompt(self):
-        global help
-        print logo
-        print help
-        print "WE ARE IN.\n"
-
-
+    
     def decrypt(self):
         filename = ""
         for i in range(0,5):
@@ -215,7 +220,7 @@ class Game(object):
 
     def genCmd(self,times):
         for i in range(0, times):
-            choices = ["key", "decrypt", "link"]
+            choices = ["key", "decrypt","link"]
             result = "FAILURE."
             c = random.choice(choices)
             if c == "key":
@@ -283,14 +288,22 @@ def main():
         host = None
         port = None
 
-    game = Game(host=host, port=port, duration=90)
+    game = Game(host=host, port=port, duration=10)
+
+    global help
+    print logo
+    print help
+    print "\n\nCONNECTING...\n\n"
+
     game.start()
-    
-    
-    game.initprompt()
 
     while not game.over:
         try:
+            
+            while not game.setup:
+                pass
+             
+            print "WE ARE IN.\n"
             game.promt()
             
             cmd = raw_input('%ds > ' % (game.remainingTime()))
