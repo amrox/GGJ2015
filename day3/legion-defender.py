@@ -63,7 +63,7 @@ VIRUS_FILES = [
 
 global DEFENDER_GAME
 
-SAY_ENABLED = False
+SAY_ENABLED = True
 TRACE_TIME = 90
 
 
