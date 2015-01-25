@@ -560,10 +560,10 @@ class HackerGame(object):
         if cmd == "help" or cmd == "?":
             print help
         elif "inf" in string.lower(cmd) or "infect" == cmd:
-            v = Virus(self,"inf",1,"Gathering information from social network.", "Hacked social network.", "Failed to hack social network.")
+            v = Virus(self,"inf",1,"HACKING TARGET...", "COMPRIMISED TARGET.", "FAILED TO DESTABALIZE TARTGET.")
             v.handleResult()
         else:
-            print "I did not understand that command."
+            print "I DID NOT UNDERSTAND THAT COMMAND."
     def promt(self):
         print "WHAT DO WE DO FROM HERE?\n\n"
     
