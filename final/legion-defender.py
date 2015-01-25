@@ -513,12 +513,14 @@ class HackerGame(object):
 
         self.successes = 0
         self.failures = 0
+        self.offline = True
 
         self.data = {}
     
     def start(self):
         if self.host is not None and self.port is not None:
             self._connect()
+            self.offline = False
         else:
             self.setup = True
 
@@ -556,14 +558,17 @@ class HackerGame(object):
                 self.setup = True
             if self.data["END"] is not None:
                 self.winner = self.data["END"]
-                if self.winner == "HACKER":
-                    print "WE HAVE WON, ALL DATA IS BELONG TO US."
-                else:
-                    print "WE HAVE BEEN TRACED."
+                self.handleEndGame(self.winner)
         except IndexError:
             pass
         except KeyError:
             pass
+    def handleEndGame(self, winner):
+        if self.winner == "HACKER":
+            print "WE HAVE WON, ALL DATA IS BELONG TO US."
+        else:
+            print "WE HAVE BEEN TRACED."
+
     def send(self,msg):
         if self.socket is not None:
             self.socket.send(msg)
@@ -673,7 +678,7 @@ class Virus(object):
             self.game.playsound(random.randint(500, 1000))
         else:
             print self.onfailure
-            self.game.failures -=1
+            self.game.failures +=1
             self.game.playsound(random.randint(5000,10000))
 
         if len(self.game.data) > 0:
@@ -686,6 +691,14 @@ class Virus(object):
             if self.game.successes == 8:
                 print "RETRIEVED TARGET'S PIN: %s" % self.game.data["PIN"]
                 self.game.send("cracked\tsecurity pin")
+
+        if self.game.offline:
+            if self.game.successes == 8:
+                self.game.winner = "HACKER"
+                self.game.handleEndGame(self.game.winner)
+            elif self.game.failures == 8:
+                self.game.winner = "DEFENDER"
+                self.game.handleEndGame(self.game.winner)
 
 def hacker_main():
 
