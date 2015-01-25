@@ -106,6 +106,7 @@ class Game(object):
             self.setup = True
 
         self.thread = GameThread(self)
+        self.thread.daemon = True
         self.thread.start()
         self.startTime = time.time()
 
