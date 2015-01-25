@@ -114,6 +114,8 @@ class Game(object):
 
         self.over = False
 
+        self.vCount = 0
+
     def intro(self):
     
         print BANNER 
@@ -151,24 +153,24 @@ class Game(object):
     
         time.sleep(0.5)
     
-        print "Starting Countermeasures..."
-        say("starting countermeasures")
+        #print "Starting Countermeasures..."
+        #say("starting countermeasures")
     
-        time.sleep(0.5)
+        #time.sleep(0.5)
     
-        print "Beginning Trace..."
-        say("beginning trace")
+        #print "Beginning Trace..."
+        #say("beginning trace")
     
-        time.sleep(0.5)
+        #time.sleep(0.5)
     
-        print "Trace will complete in 1 minute"
-        print ""
-        say("Trace will complete in 1 minutes.")
+        #print "Trace will complete in 1 minute"
+        #print ""
+        #say("Trace will complete in 1 minutes.")
     
-        time.sleep(1.0)
-        say("Virus locations will be displayed in the console.")
-        say("Beware of decoy files.")
-        
+        #time.sleep(1.0)
+        #say("Virus locations will be displayed in the console.")
+        #say("Beware of decoy files.")
+        #
         time.sleep(0.5)
         print "PREPARE TO DEFEND"
         say("prepare to defend")
@@ -184,8 +186,10 @@ class Game(object):
         while not GAME.over:
 
             if SINGLE_PLAYER:
-                self.virusAttack()
-   
+                self.vCount = 1
+           
+            self.virusAttack()
+
             lastVirusCount = len(self.activeViruses)
             self.checkViruses()
     
@@ -236,9 +240,13 @@ class Game(object):
 
     def virusAttack(self):
 
-        self.installVirus()
-        for i in range(random.choice(range(1, 3))):
-            openRandomTempDir()
+        while self.vCount > 0:
+
+            self.installVirus()
+            for i in range(random.choice(range(1, 3))):
+                openRandomTempDir()
+
+            self.vCount = self.vCount - 1
 
 
     def installVirus(self):
@@ -286,7 +294,8 @@ class SingleTCPHandler(SocketServer.BaseRequestHandler):
             hacker_move = self.request.recv(RECV_MAX)
 
             if hacker_move == "virus":
-                GAME.virusAttack()
+                GAME.vCount = GAME.vCount + 2
+                #GAME.virusAttack()
         
 
 
