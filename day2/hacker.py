@@ -289,7 +289,7 @@ def main():
         host = None
         port = None
 
-    game = Game(host=host, port=port, duration=10)
+    game = Game(host=host, port=port, duration=120)
 
     global help
     print logo
