@@ -81,7 +81,7 @@ def say(msg, dur=None):
 def openRandomTempDir():
     d = tempfile.mkdtemp()
     msg = HACKER_MSGS[random.choice(range(len(HACKER_MSGS)))]
-    call(["touch", os.path.join(d, msg)])
+    call(["touch", os.path.join(d, "%s.decoy" % (msg))])
     time.sleep(0.3)
     call(["open", "-a", "Finder", d])
 
