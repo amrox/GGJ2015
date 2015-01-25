@@ -513,7 +513,7 @@ class HackerGame(object):
         self.thread = HackerGameThread(self)
         self.thread.daemon = True
         self.thread.start()
-        self.startTime = time.time()
+        
 
     def stop(self):
         self.stopFlag.set()
@@ -655,20 +655,25 @@ class Virus(object):
         print self.result
 
         if self.result == "SUCCESS.":
+            print self.onsuccess
             self.game.send("virus")
             self.game.successes +=1
             self.game.playsound(random.randint(500, 1000))
         else:
+            print self.onfailure
             self.game.failures -=1
             self.game.playsound(random.randint(5000,10000))
 
         if len(self.game.data) > 0:
             if self.game.successes == 3:
                 print "RETRIEVED TARGET'S NAME: %s" % self.game.data["NAME"]
+                self.game.send("cracked\tname")
             if self.game.successes == 5:
                 print "RETRIEVED TARGET'S HOMETOWN: %s" % self.game.data["HOMETOWN"]
+                self.game.send("cracked\thome")
             if self.game.successes == 8:
                 print "RETRIEVED TARGET'S PIN: %s" % self.game.data["PIN"]
+                self.game.send("cracked\tnpin")
 
 def hacker_main():
 
@@ -694,8 +699,11 @@ def hacker_main():
 
     while game.setup == False:
         pass
-             
+            
+
     print "WE ARE IN.\n"
+
+    game.startTime = time.time()
 
     while not game.over:
         try:
