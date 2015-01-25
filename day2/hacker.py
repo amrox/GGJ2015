@@ -39,14 +39,10 @@ help = """
 Tool             | Cost       | Description
 ================================================================
 bankjob <amount> | 15 sec     | Access bank records.
-foe              | 5 sec      | Hack social network.
+dirt             | 5 sec      | Gather personal data.
 locker  <amount> | 12 sec     | Encrypt target data and ransom.
 ================================================================
     """
-
-#TEMPORARY global values
-targetFunds = 1000.0
-hackerFunds = 0.0
 
 class GameThread(Thread):
 
@@ -58,7 +54,8 @@ class GameThread(Thread):
         while not self.game.stopFlag.wait(0.5):
 
             if self.game.remainingTime() == 0:
-                self.game._handle("LOST")
+                self.game.lost()
+                self.game.stop()
 
             elif self.game.socket is not None:
                 try:
@@ -86,7 +83,9 @@ class Game(object):
         self.startTime = None
 
         self.tools = []
-
+        self.data = {}
+        self.data["funds"] = 0.0
+        self.data["targetFunds"] = 1000.0 # randomize?
     def start(self):
         if self.host is not None and self.port is not None:
             self._connect()
@@ -115,24 +114,35 @@ class Game(object):
         self.socket.setblocking(0)  # optional non-blocking
     
     def _handle(self, msg):
-        if msg == "LOST":
-            self.lost()
-            self.stop()
+        fields = msg.split('\t')
+        
+        try:
+            prop = fields[0]
+            val = fields[1]
+            self.data[prop] = val
+            print self.data
+        except IndexError:
+            Dumb = None
+            print ""
+            #do nothing
+    def send(self,msg):
+        if self.socket is not None:
+            self.socket.send(msg)
     def handleCommand(self, cmd):
         if cmd == "help":
             print help
         elif "bankjob" in cmd:
             try:
-                t = Bankjob(cmd.split()[1])
+                t = Bankjob(self,cmd.split()[1])
                 self.tools.append(t)
             except IndexError:
                 print "Must enter an amount."
-        elif "foe" in cmd:
-            t = Tool("foe",5, "Gathering information from social network.", "Hacked social network.", "Failed to hack social network.")
+        elif "dirt" in cmd:
+            t = Tool(self,"dirt",5, "Gathering information from social network.", "Hacked social network.", "Failed to hack social network.")
             self.tools.append(t)
         elif "locker" in cmd:
             try:
-                t = Tool("locker", 15,"Attempting to ransom %s credits." % cmd.split()[1], "Target paid the ransom.", "Data lock failed.")
+                t = Tool(self,"locker", 15,"Attempting to ransom %s credits." % cmd.split()[1], "Target paid the ransom.", "Data lock failed.")
                 self.tools.append(t)
             except IndexError:
                 print "Must enter an amount."
@@ -158,7 +168,8 @@ def usage():
 
 class Tool(object):
     """docstrinTool"""
-    def __init__(self,name,duration,started, completion, failure):
+    def __init__(self,game,name,duration,started, completion, failure):
+        self.game = game
         self.done = False
         self.name = name
         self.duration = duration
@@ -175,15 +186,14 @@ class Tool(object):
 class  Bankjob(Tool):
     """docstring for  Bankjob"""
     bankBeingHacked = 0
-    def __init__(self, amount):
-        super(Bankjob, self).__init__("bankjob", 15,"Attempting to withdraw %s credits.\n" % amount , "Accessed bank records.", "Supicious activity detected. Account Locked.")
+    def __init__(self,game, amount):
+        super(Bankjob, self).__init__(game,"bankjob", 5,"Attempting to withdraw %s credits.\n" % amount , "Accessed bank records.", "Supicious activity detected. Account Locked.")
         Bankjob.bankBeingHacked += 1 
         self.amount = amount
     def finished(self):
-        global targetFunds
         self.done = True
-        percentage = targetFunds - float(self.amount)
-        percentage = percentage / targetFunds
+        percentage = self.game.data["targetFunds"] - float(self.amount)
+        percentage = percentage / self.game.data["targetFunds"]
         percentage = (1 - percentage) * 100
 
         if Bankjob.bankBeingHacked >= 2:
@@ -192,10 +202,10 @@ class  Bankjob(Tool):
         elif percentage > 30:
             print self.onfailure
         else: 
-            global hackerFunds
             print self.onsuccess
-            targetFunds -= float(self.amount)
-            hackerFunds += float(self.amount)
+            self.game.data["targetFunds"] -= float(self.amount)
+            self.game.data["funds"] += float(self.amount)
+            self.game.send("virus")
             print "%s credits added to funds." % self.amount
 
 def main():
