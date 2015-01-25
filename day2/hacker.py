@@ -38,17 +38,18 @@ dX.    9Xb      .dXb    __                         __    dXb.     dXP     .Xb
 
 help = """
 ================================================================
-Tool             | Cost       | Description
+Commands          | Description
 ================================================================
-bankjob <amount> | 15 sec     | Access bank records.
-dirt             | 5 sec      | Gather personal data.
-locker  <amount> | 12 sec     | Encrypt target data and ransom.
+infect            | Place virus on target's machine.
+usekey <key>      | Use a generated key.
+dc <file.enc>     | Decrypt a file.
+link <from> <to> | Route from one node to another.
+help              | Display help.
 ================================================================
-
-Use "usekey <key>" command to use a generated key.
-Use "dc <encrypted_file>" to decrypt a file.
-Use "help" or "?" to view help.
     """
+
+#bankjob <amount>  | Access target's bank records.
+#locker  <amount>  | Encrypt target data for ransom.
 
 random.seed()
 
@@ -133,6 +134,9 @@ class Game(object):
     def handleCommand(self, cmd):
         if cmd == "help" or cmd == "?":
             print help
+        elif "infect" in string.lower(cmd):
+            t = Tool(self,"dirt",1,"Gathering information from social network.", "Hacked social network.", "Failed to hack social network.")
+            t.handleResult()
         elif cmd == "hack":
             self.send("virus")
         elif "bankjob" in cmd:
@@ -141,9 +145,6 @@ class Game(object):
                 t.handleResult()
             except IndexError:
                 print "Must enter an amount."
-        elif "dirt" in cmd:
-            t = Tool(self,"dirt",1, "Gathering information from social network.", "Hacked social network.", "Failed to hack social network.")
-            t.handleResult()
         elif "locker" in cmd:
             try:
                 t = Tool(self,"locker", 1,"Attempting to ransom %s credits." % cmd.split()[1], "Target paid the ransom.", "Data lock failed.")
@@ -160,6 +161,7 @@ class Game(object):
         print help
         print "WE ARE IN.\n"
 
+
     def decrypt(self):
         filename = ""
         for i in range(0,5):
@@ -175,6 +177,14 @@ class Game(object):
                 key += random.choice(list(string.ascii_uppercase))
         return "%s" % key
 
+    def brokenlink(self, lenth):
+        a = ""
+        b = ""
+        for i in range(0,lenth):
+            a += str(random.randint(0,9))
+            b += str(random.randint(0,9))
+        return (a, b) 
+
     def askdec(self):
         filename = self.decrypt()
         print "ENCRYPTED FILE FOUND... %s" % filename
@@ -188,20 +198,32 @@ class Game(object):
         key = self.genkey()
         print "KEY GENERATED... %s" % key
         input = raw_input('%ds > ' % (self.remainingTime()))
-        if input == "usekey %s" % key:
+        if string.upper(input) == string.upper("usekey %s" % key):
             return "SUCCESS."
         else:
             return "FAILURE."
 
+    def asklink(self):
+        a, b = self.brokenlink(2)
+        print "LINK FROM NODE %s to NODE %s BROKEN." % (a, b)
+        input = raw_input('%ds > ' % (self.remainingTime()))
+        if string.upper(input) == string.upper("link %s %s" % (a, b)):
+            return "SUCCESS."
+        else:
+            return "FAILURE."
+
+
     def genCmd(self,times):
         for i in range(0, times):
-            choices = ["key", "decrypt"]
+            choices = ["key", "decrypt", "link"]
             result = "FAILURE."
             c = random.choice(choices)
             if c == "key":
                 result = self.askkey()
             elif c == "decrypt":
                 result = self.askdec()
+            elif c == "link":
+                result = self.asklink()
 
             if result == "FAILURE.":
                 return "FAILURE."
@@ -209,7 +231,6 @@ class Game(object):
         
 def usage():
     return "hacker.py [host] [port]"
-
 
 class Tool(object):
     """docstrinTool"""
@@ -226,7 +247,6 @@ class Tool(object):
         if self.result == "SUCCESS.":
             self.game.send("virus")
         
-
 class  Bankjob(Tool):
     """docstring for  Bankjob"""
     def __init__(self,game, amount):
@@ -281,7 +301,6 @@ def main():
         except KeyboardInterrupt:
             game.stop()
             sys.exit(0)
-
 
 if __name__ == '__main__':
     main()
