@@ -655,10 +655,12 @@ class Virus(object):
         print self.result
 
         if self.result == "SUCCESS.":
+            print self.onsuccess
             self.game.send("virus")
             self.game.successes +=1
             self.game.playsound(random.randint(500, 1000))
         else:
+            print self.onfailure
             self.game.failures -=1
             self.game.playsound(random.randint(5000,10000))
 
