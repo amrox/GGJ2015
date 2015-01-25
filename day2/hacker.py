@@ -44,6 +44,10 @@ bankjob <amount> | 15 sec     | Access bank records.
 dirt             | 5 sec      | Gather personal data.
 locker  <amount> | 12 sec     | Encrypt target data and ransom.
 ================================================================
+
+Use "usekey <key>" command to use a generated key.
+Use "dc <encrypted_file>" to decrypt a file.
+Use "help" or "?" to view help.
     """
 
 random.seed()
@@ -129,6 +133,8 @@ class Game(object):
     def handleCommand(self, cmd):
         if cmd == "help" or cmd == "?":
             print help
+        elif cmd == "hack":
+            self.send("virus")
         elif "bankjob" in cmd:
             try:
                 t = Bankjob(self,cmd.split()[1])
@@ -136,11 +142,11 @@ class Game(object):
             except IndexError:
                 print "Must enter an amount."
         elif "dirt" in cmd:
-            t = Tool(self,"dirt",3, "Gathering information from social network.", "Hacked social network.", "Failed to hack social network.")
+            t = Tool(self,"dirt",1, "Gathering information from social network.", "Hacked social network.", "Failed to hack social network.")
             t.handleResult()
         elif "locker" in cmd:
             try:
-                t = Tool(self,"locker", 3,"Attempting to ransom %s credits." % cmd.split()[1], "Target paid the ransom.", "Data lock failed.")
+                t = Tool(self,"locker", 1,"Attempting to ransom %s credits." % cmd.split()[1], "Target paid the ransom.", "Data lock failed.")
                 t.handleResult()
             except IndexError:
                 print "Must enter an amount."
@@ -158,7 +164,7 @@ class Game(object):
         filename = ""
         for i in range(0,5):
             filename += random.choice(list(string.ascii_lowercase))
-        return "%s.enc" % filename
+        return string.upper("%s.enc" % (filename))
 
     def  genkey(self):
         key = ""
@@ -173,7 +179,7 @@ class Game(object):
         filename = self.decrypt()
         print "ENCRYPTED FILE FOUND... %s" % filename
         input = raw_input('%ds > ' % (self.remainingTime()))
-        if input == "decrypt %s" % filename:
+        if string.upper(input) == string.upper("dc %s" % (filename)):
             return "SUCCESS."
         else:
             return "FAILURE."
@@ -217,16 +223,18 @@ class Tool(object):
         self.result = self.game.genCmd(diff)
     def handleResult(self):
         print self.result
+        if self.result == "SUCCESS.":
+            self.game.send("virus")
         
 
 class  Bankjob(Tool):
     """docstring for  Bankjob"""
     def __init__(self,game, amount):
-        super(Bankjob, self).__init__(game,"bankjob", 3,"Attempting to withdraw %s credits.\n" % amount , "Accessed bank records.", "Supicious activity detected. Account Locked.")
+        super(Bankjob, self).__init__(game,"bankjob", 1,"Attempting to withdraw %s credits.\n" % amount , "Accessed bank records.", "Supicious activity detected. Account Locked.")
         self.amount = amount
 
     def handleResult(self):
-        if result == "SUCCESS":
+        if result == "SUCCESS.":
             percentage = self.game.data["targetFunds"] - float(self.amount)
             percentage = percentage / self.game.data["targetFunds"]
             percentage = (1 - percentage) * 100
@@ -239,6 +247,8 @@ class  Bankjob(Tool):
                 self.game.data["funds"] += float(self.amount)
                 self.game.send("virus")
                 print "%s credits added to funds." % self.amount
+        else:
+            print "FAILURE."
 
 def main():
 
@@ -253,7 +263,7 @@ def main():
         host = None
         port = None
 
-    game = Game(host=host, port=port, duration=60)
+    game = Game(host=host, port=port, duration=90)
     game.start()
     
     
