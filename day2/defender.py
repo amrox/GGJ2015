@@ -1,15 +1,16 @@
 #!/usr/bin/env python
 
 import SocketServer, subprocess, sys 
-from threading import Thread
+from threading import Thread, Event
 from subprocess import call
 import time
 import os
 import tempfile
 import random
+import socket
 
+RECV_MAX = 16384
 DURATION=120
-HOST = 'localhost'
 PORT = 2000
 BANNER =''' 
     ____  ______   ____  ___________________   ______  __________ 
@@ -26,10 +27,10 @@ VOICE = 'Daniel'
 HACKER_MSGS=[
         'YOU_CANT_HIDE',
         'I_WILL_PWN_YOU',
-        'WHERE_DO_WE_GO_FROM_HERE']
+        'WHAT_DO_YOU_DO_NOW']
 
 VIRUS_LOCS = [
-        ('Home', '~'),
+        ('Downloads', '~/Downloads'),
         ('Documents', '~/Documents'),
         ('Desktop', '~/Desktop')]
 
@@ -42,11 +43,15 @@ VIRUS_FILES = [
         'HOT_LADIES.xls'
         ]
 
+SAY_ENABLED = False
 
-ACTIVE_VIRUSES = []
+global GAME
+
+
 
 def say(msg):
-    call(["say", "-v", VOICE, msg])
+    if SAY_ENABLED:
+        call(["say", "-v", VOICE, msg])
 
 def openRandomTempDir():
     d = tempfile.mkdtemp()
@@ -56,135 +61,202 @@ def openRandomTempDir():
     call(["open", "-a", "Finder", d])
 
 
-def installVirus():
+def clean():
 
-    while True:
+    for l in VIRUS_LOCS:
+        for f in VIRUS_FILES:
+            p = os.path.join(
+                    os.path.expanduser(l[1]), f)
+            call(["rm", "-f", p])
 
-        virusLoc = VIRUS_LOCS[random.choice(range(len(VIRUS_LOCS)))]
-        virusDir = os.path.expanduser(virusLoc[1])
-        virusFile = VIRUS_FILES[random.choice(range(len(VIRUS_FILES)))]
-        virusPath = os.path.join(virusDir, virusFile)
 
-        if virusPath not in ACTIVE_VIRUSES:
-            ACTIVE_VIRUSES.append(virusPath)
-            break
+def getIP():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(("gmail.com",80))
+    ip = s.getsockname()[0]
+    s.close()
+    return ip
 
-    call(["touch", virusPath])
 
-    say("virus detected in %s" % (virusLoc[0]))
-    if len(ACTIVE_VIRUSES) == 1:
-        say("delete it quickly!")
+class GameThread(Thread):
 
+    def __init__(self, game):
+        Thread.__init__(self)
+        self.game = game 
+
+    def run(self):
+        while not self.game.stopFlag.wait(0.5):
+            self.game.run()
+
+
+
+class Game(object):
+
+    def __init__(self):
+
+        self.name = None
+        self.hometown = None
+        self.favoriteColor = None
+
+        self.activeViruses = []
+
+        self.intruderFlag = Event()
+        self.stopFlag = Event()
+
+        self.over = False
+
+    def intro(self):
     
-def checkViruses():
+        print BANNER 
+        
+        raw_input("Press Enter to begin.\n\n")
+    
+        print "Welcome to PC Defender!" 
+        say("Welcome to PC Defender.")
+        say("Please register to continue.")
+        print ""
+        self.name = raw_input("Name: [Dork] ") or "Dork\n"
+        self.hometown = raw_input("Hometown: [Philly] ") or "Philly\n"
+        self.favoriteColor = raw_input("Favorite Color: [Red] ") or "Red\n"
+        print ""
+    
+        print "Now running\n  IP:   %s\n  PORT: %d" % (getIP(), PORT)
+        say("Thank you for registering. PC Defender is now running.")
+        print ""
+        
+        time.sleep(0.5)
+    
 
-    global ACTIVE_VIRUSES
+    def run(self):
 
-    newViruses = []
-    a = ACTIVE_VIRUSES
+        self.intruderFlag.wait()
+    
+        print ""
+        print "*** INTRUDER DETECTED ****"
+        print ""
+        say("intruder detected")
+        say("repeat")
+        say("intruder detected")
+    
+        time.sleep(0.5)
+    
+        print "Starting Countermeasures..."
+        say("starting countermeasures")
+    
+        time.sleep(0.5)
+    
+        print "Beginning Trace..."
+        say("beginning trace")
+    
+        time.sleep(0.5)
+    
+        print "Trace will complete in 1 minute"
+        print ""
+        say("Trace will complete in 1 minutes.")
+    
+        time.sleep(1.0)
+        say("Virus locations will be displayed in the console.")
+        say("Beware of decoy files.")
+        
+        time.sleep(0.5)
+        print "PREPARE TO DEFEND"
+        say("prepare to defend")
+        call(["say", "-v", VOICE, "-r", "2'", "now"])
+    
+        time.sleep(0.5)
+    
+        max_viruses = 5
+        duration = 60
+    
+        startTime = time.time()
+    
+        while not GAME.over:
+    
+            self.installVirus()
+            for i in range(random.choice(range(1, 3))):
+                openRandomTempDir()
+    
+            self.checkViruses()
+    
+            if len(self.activeViruses) > 0:
+                print ""
+                print "ACTIVE VIRUSES (%d/%d)" % (len(self.activeViruses), max_viruses)
+                for v in self.activeViruses:
+                    print "   %s" % (v)
+    
+            if len(self.activeViruses) == max_viruses:
+                print ""
+                print "TOO MANY VIRUS. COMPUTER OVER. YOU LOSE."
+                say("TOO MANY VIRUS. COMPUTER OVER. YOU LOSE.")
+                self.stop()
+    
+            time.sleep(random.choice(range(2,5)))
+    
+            now = time.time()
+            if startTime + duration < now:
+                say("TRACE COMPLETE. HACKER IP FOUND. POLICE NOTIFIED.")
+                say("SUCCESS!")
+                self.stop()
+            else:
+                left = duration - (now - startTime)
+                say("%d seconds left" % (left))
 
-    for v in a:
-        if os.path.exists(v):
-            newViruses.append(v)
 
-    ACTIVE_VIRUSES = newViruses
+    def start(self):
+        self.intro()
+        self.thread = GameThread(self)
+        self.thread.start()
 
-
-
-
-def intro():
-    time.sleep(0.5)
-
-    for i in range(0, 3):
-        print "Scanning..."
-        call(["say", "-v", VOICE, "scanning"])
-        time.sleep(2)
-
-    print ""
-    print ""
-
-    print "*** INTRUDER DETECTED ****"
-    print ""
-    call(["say", "-v", VOICE, "intruder detected"])
-    call(["say", "-v", VOICE, "repeat"])
-    call(["say", "-v", VOICE, "intruder detected"])
-
-    time.sleep(0.5)
-
-    print "Starting Countermeasures..."
-    call(["say", "-v", VOICE, "starting countermeasures"])
-
-    time.sleep(0.5)
-
-    print "Beginning Trace..."
-    call(["say", "-v", VOICE, "beginning trace"])
-
-    time.sleep(0.5)
-
-    print "Trace will complete in 1 minute"
-    print ""
-    call(["say", "-v", VOICE, "Trace will complete in 1 minutes."])
-
-    time.sleep(1.0)
-
-    print "PREPARE TO DEFEND"
-    call(["say", "-v", VOICE, "prepare to defend"])
-    call(["say", "-v", VOICE, "-r", "2'", "now"])
-
-    time.sleep(0.5)
-
-def go():
-
-    raw_input("Press Enter to begin.\n\n")
+    def stop(self):
+        self.stopFlag.set()
+        self.over = True
 
 
-    max_viruses = 5
-    duration = 60
-
-    intro()
-
-    startTime = time.time()
-
-    while(True):
-
-        installVirus()
-        for i in range(random.choice(range(1, 3))):
-            openRandomTempDir()
-
-        checkViruses()
-
-        if len(ACTIVE_VIRUSES) > 0:
-            print ""
-            print "ACTIVE VIRUSES (%d/%d)" % (len(ACTIVE_VIRUSES), max_viruses)
-            for v in ACTIVE_VIRUSES:
-                print "   %s" % (v)
-
-        if len(ACTIVE_VIRUSES) == max_viruses:
-            print ""
-            print "TOO MANY VIRUS. COMPUTER OVER. YOU LOSE."
-            say("TOO MANY VIRUS. COMPUTER OVER. YOU LOSE.")
-            exit(0)
-
-        time.sleep(random.choice(range(2,5)))
-
-        now = time.time()
-        if startTime + duration < now:
-            say("TRACE COMPLETE. HACKER IP FOUND. POLICE NOTIFIED.")
-            say("SUCCESS!")
-            exit(0)
-        else:
-            left = duration - (now - startTime)
-            say("%d seconds left" % (left))
-
+    def installVirus(self):
+    
+        while True:
+    
+            virusLoc = VIRUS_LOCS[random.choice(range(len(VIRUS_LOCS)))]
+            virusDir = os.path.expanduser(virusLoc[1])
+            virusFile = VIRUS_FILES[random.choice(range(len(VIRUS_FILES)))]
+            virusPath = os.path.join(virusDir, virusFile)
+    
+            if virusPath not in self.activeViruses:
+                self.activeViruses.append(virusPath)
+                break
+    
+        call(["touch", virusPath])
+    
+        say("virus detected in %s" % (virusLoc[0]))
+        call(["open", "-a", "Finder", virusDir])
+        if len(self.activeViruses) == 1:
+            say("delete it quickly!")
+    
+        
+    def checkViruses(self):
+    
+        newViruses = []
+        a = self.activeViruses
+        for v in a:
+            if os.path.exists(v):
+                newViruses.append(v)
+        self.activeViruses = newViruses
 
 
 class SingleTCPHandler(SocketServer.BaseRequestHandler):
     "One instance per connection.  Override handle(self) to customize action."
 
-
     def handle(self):
-        go()
-    
+        GAME.intruderFlag.set()
+
+        self.request.send(GAME.name)
+        self.request.send(GAME.hometown)
+        self.request.send(GAME.favoriteColor)
+
+        while not GAME.over:
+            hacker_move = self.request.recv(RECV_MAX)
+        
+
 
 class SimpleServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     # Ctrl-C will cleanly kill all spawned threads
@@ -195,12 +267,21 @@ class SimpleServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     def __init__(self, server_address, RequestHandlerClass):
         SocketServer.TCPServer.__init__(self, server_address, RequestHandlerClass)
 
+
 if __name__ == "__main__":
-    server = SimpleServer((HOST, PORT), SingleTCPHandler)
+
+    clean()
+
+    global GAME
+    GAME = Game()
+    GAME.start()
+
     # terminate with Ctrl-C
-    print BANNER 
-    go()
+    server = SimpleServer((getIP(), PORT), SingleTCPHandler)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
+        GAME.stop()
         sys.exit(0)
+
+
