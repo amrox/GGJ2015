@@ -40,16 +40,13 @@ help = """
 ================================================================
 Commands          | Description
 ================================================================
-infect            | Place virus on target's machine.
+inf               | Place virus on target's machine.
 usekey <key>      | Use a generated key.
 dc <file.enc>     | Decrypt a file.
 link <from> <to>  | Route from one node to another.
 help              | Display help.
 ================================================================
     """
-
-#bankjob <amount>  | Access target's bank records.
-#locker  <amount>  | Encrypt target data for ransom.
 
 random.seed()
 
@@ -60,14 +57,14 @@ class GameThread(Thread):
         self.game = game 
 
     def run(self):
-        while self.game.setup == False:
-            pass
+       
 
         while not self.game.stopFlag.wait(0.5):
 
-            if self.game.remainingTime() == 0:
-                self.game.lost()
-                self.game.stop()
+
+            if self.game.winner is not None and self.game.setup:
+                    self.game.lost()
+                    self.game.stop()
 
             elif self.game.socket is not None:
                 try:
@@ -95,10 +92,9 @@ class Game(object):
         self.startTime = None
 
         self.setup = False 
+        self.winner = None
 
         self.data = {}
-        self.data["funds"] = 0.0
-        self.data["targetFunds"] = 1000.0 # randomize?
     def start(self):
         if self.host is not None and self.port is not None:
             self._connect()
@@ -120,7 +116,6 @@ class Game(object):
         return int(r)
 
     def lost(self):
-        print "GAME OVER\n\nPress enter to continue."
         self.over = True
 
     def _connect(self):
@@ -135,10 +130,18 @@ class Game(object):
             val = fields[1]
             self.data[prop] = val
 
-            if self.data["begin"] is not None:
-                self.duration = self["begin"]
+            if self.data["BEGIN"] is not None:
+                self.duration = int(self.data["BEGIN"])
                 self.setup = True
+            if self.data["END"] is not None:
+                self.winner = self.data["END"]
+                if self.winner == "HACKER":
+                    print "WE HAVE WON, ALL DATA IS BELONG TO US."
+                else:
+                    print "WE HAVE BEEN TRACED."
         except IndexError:
+            pass
+        except KeyError:
             pass
     def send(self,msg):
         if self.socket is not None:
@@ -146,23 +149,9 @@ class Game(object):
     def handleCommand(self, cmd):
         if cmd == "help" or cmd == "?":
             print help
-        elif "infect" in string.lower(cmd):
-            t = Tool(self,"dirt",1,"Gathering information from social network.", "Hacked social network.", "Failed to hack social network.")
+        elif "inf" in string.lower(cmd) or "infect" == cmd:
+            t = Tool(self,"inf",1,"Gathering information from social network.", "Hacked social network.", "Failed to hack social network.")
             t.handleResult()
-        elif cmd == "hack":
-            self.send("virus")
-        elif "bankjob" in cmd:
-            try:
-                t = Bankjob(self,cmd.split()[1])
-                t.handleResult()
-            except IndexError:
-                print "Must enter an amount."
-        elif "locker" in cmd:
-            try:
-                t = Tool(self,"locker", 1,"Attempting to ransom %s credits." % cmd.split()[1], "Target paid the ransom.", "Data lock failed.")
-                t.handleResult()
-            except IndexError:
-                print "Must enter an amount."
         else:
             print "I did not understand that command."
     def promt(self):
@@ -170,7 +159,7 @@ class Game(object):
     
     def decrypt(self):
         filename = ""
-        for i in range(0,5):
+        for i in range(0,4):
             filename += random.choice(list(string.ascii_lowercase))
         return string.upper("%s.enc" % (filename))
 
@@ -195,7 +184,7 @@ class Game(object):
         filename = self.decrypt()
         print "ENCRYPTED FILE FOUND... %s" % filename
         input = raw_input('%ds > ' % (self.remainingTime()))
-        if string.upper(input) == string.upper("dc %s" % (filename)):
+        if string.upper(input) == string.upper("dc %s" % (filename)) or string.upper(input) == string.upper("dc %s.enc" % (filename)):
             return "SUCCESS."
         else:
             return "FAILURE."
@@ -252,29 +241,7 @@ class Tool(object):
         print self.result
         if self.result == "SUCCESS.":
             self.game.send("virus")
-        
-class  Bankjob(Tool):
-    """docstring for  Bankjob"""
-    def __init__(self,game, amount):
-        super(Bankjob, self).__init__(game,"bankjob", 1,"Attempting to withdraw %s credits.\n" % amount , "Accessed bank records.", "Supicious activity detected. Account Locked.")
-        self.amount = amount
 
-    def handleResult(self):
-        if result == "SUCCESS.":
-            percentage = self.game.data["targetFunds"] - float(self.amount)
-            percentage = percentage / self.game.data["targetFunds"]
-            percentage = (1 - percentage) * 100
-
-            if percentage > 30:
-                print self.onfailure
-            else: 
-                print self.onsuccess
-                self.game.data["targetFunds"] -= float(self.amount)
-                self.game.data["funds"] += float(self.amount)
-                self.game.send("virus")
-                print "%s credits added to funds." % self.amount
-        else:
-            print "FAILURE."
 
 def main():
 
@@ -298,17 +265,17 @@ def main():
 
     game.start()
 
+    while game.setup == False:
+        pass
+             
+    print "WE ARE IN.\n"
+
     while not game.over:
         try:
-            
-            while not game.setup:
-                pass
-             
-            print "WE ARE IN.\n"
             game.promt()
             
             cmd = raw_input('%ds > ' % (game.remainingTime()))
-            if game.remainingTime() > 0:
+            if game.winner is None:
                 print "\n"
                 game.handleCommand(cmd)
                 print "\n"
