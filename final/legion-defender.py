@@ -480,9 +480,14 @@ class HackerGameThread(Thread):
         while not self.game.stopFlag.wait(0.5):
 
 
-            if self.game.winner is not None and self.game.setup or self.game.offline and self.game.remainingTime() == 0:
-                    self.game.lost()
-                    self.game.stop()
+            if self.game.winner is not None and self.game.setup:
+                self.game.lost()
+                self.game.stop()
+            elif self.game.offline and self.game.remainingTime() == 0:
+                self.game.winner = "DEFENDER"
+                self.game.handleEndGame(self.game.winner)
+                self.game.lost()
+                self.game.stop()
 
             elif self.game.socket is not None:
                 try:
@@ -569,6 +574,7 @@ class HackerGame(object):
             print "\n\nWE HAVE WON, ALL DATA IS BELONG TO US."
         else:
             print "\n\nWE HAVE BEEN TRACED."
+        print "\nGAME OVER."
 
     def send(self,msg):
         if self.socket is not None:
