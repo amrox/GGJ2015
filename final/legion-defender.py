@@ -10,6 +10,7 @@ import string
 import sys
 import tempfile
 import time
+import platform
 
 RECV_MAX = 16384
 PORT = 2000
@@ -65,6 +66,12 @@ VIRUS_FILES = [
 global DEFENDER_GAME
 
 SAY_ENABLED = True
+
+if platform.system() == "Windows":
+    SAY_ENABLED = False
+    VIRUS_LOCS.pop(3)
+    VIRUS_LOCS.append(('Videos', '~/Videos'))
+
 TRACE_TIME = 90
 MAX_VIRUSES = 6
 
@@ -84,14 +91,23 @@ def say(msg, voice=None, dur=None):
 def openRandomTempDir():
     d = tempfile.mkdtemp()
     msg = HACKER_MSGS[random.choice(range(len(HACKER_MSGS)))]
-    call(["touch", os.path.join(d, "%s.decoy" % (msg))])
-    time.sleep(0.3)
-    call(["open", "-a", "Finder", d])
 
+    if platform.system() == "Windows":
+        call(["touch", os.path.join(d, "%s.decoy" % (msg))], shell=True)
+        time.sleep(0.3)
+        call(["explorer", d], shell=True)
+    else:
+        call(["touch", os.path.join(d, "%s.decoy" % (msg))])
+        time.sleep(0.3)
+        call(["open", "-a", "Finder", d])
 
 def openRandomURL():
     url = URLS[random.choice(range(len(URLS)))]
-    call(["open", url])
+
+    if platform.system() == "Windows":
+        call(["start", url],shell=True)
+    else:
+        call(["open", url],shell=True)
 
 
 def clean():
@@ -100,6 +116,9 @@ def clean():
         for f in VIRUS_FILES:
             p = os.path.join(
                     os.path.expanduser(l[1]), f)
+        if platform.system() == "Windows":
+            call(["del",p], shell=True)
+        else:
             call(["rm", "-f", p])
 
 
@@ -288,7 +307,7 @@ class DefenderGame(object):
         if self.singlePlayer:
             time.sleep(2)
             self.intruderFlag.set()
-
+ 
     def stop(self):
         self.stopFlag.set()
         self.over = True
@@ -322,10 +341,15 @@ class DefenderGame(object):
                 self.activeViruses.append(virusPath)
                 break
 
-        call(["touch", virusPath])
+        if platform.system() == "Windows":
+            call(["touch", virusPath],shell=True)
+            say("virus detected in %s" % (virusLoc[0]))
+            call(["explorer", virusDir],shell=True)
+        else:
+            call(["touch", virusPath])
+            say("virus detected in %s" % (virusLoc[0]))
+            call(["open", "-a", "Finder", virusDir])
 
-        say("virus detected in %s" % (virusLoc[0]))
-        call(["open", "-a", "Finder", virusDir])
         if len(self.activeViruses) == 1:
             say("delete it quickly!")
 
