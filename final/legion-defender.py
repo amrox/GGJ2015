@@ -480,7 +480,7 @@ class HackerGameThread(Thread):
         while not self.game.stopFlag.wait(0.5):
 
 
-            if self.game.winner is not None and self.game.setup:
+            if self.game.winner is not None and self.game.setup or self.game.offline and self.game.remainingTime() == 0:
                     self.game.lost()
                     self.game.stop()
 
@@ -566,9 +566,9 @@ class HackerGame(object):
             pass
     def handleEndGame(self, winner):
         if self.winner == "HACKER":
-            print "WE HAVE WON, ALL DATA IS BELONG TO US."
+            print "\n\nWE HAVE WON, ALL DATA IS BELONG TO US."
         else:
-            print "WE HAVE BEEN TRACED."
+            print "\n\nWE HAVE BEEN TRACED."
 
     def send(self,msg):
         if self.socket is not None:
@@ -577,10 +577,10 @@ class HackerGame(object):
         if cmd == "help" or cmd == "?":
             print help
         elif "inf" in string.lower(cmd) or "infect" == cmd:
-            v = Virus(self,"inf",1,"HACKING TARGET...", "COMPRIMISED TARGET.", "FAILED TO DESTABALIZE TARTGET.")
+            v = Virus(self,"inf",1,"HACKING TARGET...", "\nCOMPRIMISED TARGET.", "\nFAILED TO DESTABALIZE TARTGET.")
             v.handleResult()
         else:
-            print "I DID NOT UNDERSTAND THAT COMMAND."
+            print "I DID NOT UNDERSTAND THAT COMMAND.\n"
     def promt(self):
         print "WHAT DO WE DO FROM HERE?\n\n"
     
@@ -609,30 +609,48 @@ class HackerGame(object):
 
     def askdec(self):
         filename = self.decrypt()
-        print "ENCRYPTED FILE FOUND... %s" % filename
-        input = raw_input('%ds > ' % (self.remainingTime()))
-        if string.upper(input) == string.upper("dc %s" % (filename)) or string.upper(input) == string.upper("dc %s.enc" % (filename)):
-            return "SUCCESS."
-        else:
-            return "FAILURE."
+        result = None
+
+        while result is None:
+            print "ENCRYPTED FILE FOUND... %s\n" % filename
+            input = raw_input('%ds > ' % (self.remainingTime()))
+            if string.upper(input) == string.upper("dc %s" % (filename)) or string.upper(input) == string.upper("dc %s.enc" % (filename)):
+                result = "SUCCESS."
+            elif string.lower(input) == "help":
+                print "\ndc <file.enc>\n"
+            else:
+                result = "FAILURE."
+        return result
 
     def askkey(self):
         key = self.genkey()
-        print "KEY GENERATED... %s" % key
-        input = raw_input('%ds > ' % (self.remainingTime()))
-        if string.upper(input) == string.upper("usekey %s" % key):
-            return "SUCCESS."
-        else:
-            return "FAILURE."
+        result = None
+
+        while result is None:
+            print "KEY GENERATED... %s\n" % key
+            input = raw_input('%ds > ' % (self.remainingTime()))
+            if string.upper(input) == string.upper("usekey %s" % key):
+                result = "SUCCESS."
+            elif string.lower(input) == "help":
+                print "\nusekey <key>\n"
+            else:
+                result = "FAILURE."
+        return result
 
     def asklink(self):
         a, b = self.brokenlink(2)
-        print "LINK FROM NODE %s to NODE %s BROKEN." % (a, b)
-        input = raw_input('%ds > ' % (self.remainingTime()))
-        if string.upper(input) == string.upper("link %s %s" % (a, b)):
-            return "SUCCESS."
-        else:
-            return "FAILURE."
+        result = None
+
+        while result is None:
+            print "LINK FROM NODE %s to NODE %s BROKEN.\n" % (a, b)
+            input = raw_input('%ds > ' % (self.remainingTime()))
+            if string.upper(input) == string.upper("link %s %s" % (a, b)):
+                result = "SUCCESS."
+            elif string.lower(input) == "help":
+                print "\nlink <to> <from>\n"
+            else:
+                result = "FAILURE."
+        return result
 
 
     def genCmd(self,times):
@@ -670,7 +688,7 @@ class Virus(object):
         print  "%s" % started 
         self.result = self.game.genCmd(diff)
     def handleResult(self):
-        print self.result
+        print "\n" + self.result
 
         if self.result == "SUCCESS.":
             print self.onsuccess
@@ -680,7 +698,7 @@ class Virus(object):
         else:
             print self.onfailure
             self.game.failures +=1
-            self.game.playsound(random.randint(5000,10000))
+            self.game.playsound(random.randint(1000,1500))
 
         if len(self.game.data) > 0:
             if self.game.successes == 3:
